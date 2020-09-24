@@ -151,7 +151,7 @@ class ExtractTrainer:
         self.model_path = "./state_dict/pytorch_model.bin" # roberta模型位置
         self.recent_model_path = "" # 用于把已经训练好的模型继续训练
         self.model_save_path = "./bert_model_relation_extrac.bin"
-        self.batch_size = 96
+        self.batch_size = 86
         self.lr = 1e-5
         # 加载字典
         self.word2idx = load_chinese_base_vocab(self.vocab_path)
