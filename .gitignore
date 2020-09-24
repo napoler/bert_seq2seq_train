@@ -1,2 +1,5 @@
 data/*
 model/*
+corpus/*
+state_dict/*
+
