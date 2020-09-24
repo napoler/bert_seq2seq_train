@@ -145,10 +145,10 @@ class ExtractTrainer:
     def __init__(self):
         # 加载数据
         data_path = "./corpus/三元组抽取/train_data.json"
-        self.vocab_path = "./state_dict/roberta_wwm_vocab.txt" # roberta模型字典的位置
+        self.vocab_path = "./state_dict/vocab.txt" # roberta模型字典的位置
         self.data = load_data(data_path)
         self.model_name = "roberta" # 选择模型名字
-        self.model_path = "./state_dict/roberta_wwm_pytorch_model.bin" # roberta模型位置
+        self.model_path = "./state_dict/pytorch_model.bin" # roberta模型位置
         self.recent_model_path = "" # 用于把已经训练好的模型继续训练
         self.model_save_path = "./bert_model_relation_extrac.bin"
         self.batch_size = 16
