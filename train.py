@@ -9,6 +9,7 @@ from bert_seq2seq.tokenizer import Tokenizer, load_chinese_base_vocab
 from bert_seq2seq.utils import load_bert, load_model_params, load_recent_model
 import numpy as np 
 import time 
+import argparse
 
 def load_data(filename):
     D = []
@@ -22,13 +23,14 @@ def load_data(filename):
             })
     return D
 
-predicate2id, id2predicate = {}, {}
-with open('./corpus/三元组抽取/all_50_schemas') as f:
-    for l in f:
-        l = json.loads(l)
-        if l['predicate'] not in predicate2id:
-            id2predicate[len(predicate2id)] = l['predicate']
-            predicate2id[l['predicate']] = len(predicate2id)
+#predicate2id, id2predicate = {}, {}
+#with open('./corpus/三元组抽取/all_50_schemas') as f:
+#with open('./corpus/') as f:
+#    for l in f:
+#        l = json.loads(l)
+#        if l['predicate'] not in predicate2id:
+#            id2predicate[len(predicate2id)] = l['predicate']
+#            predicate2id[l['predicate']] = len(predicate2id)
 
 def search(pattern, sequence):
     """从sequence中寻找子串pattern
@@ -142,21 +144,24 @@ def collate_fn(batch):
         torch.tensor(subject_ids, dtype=torch.long)
 
 class ExtractTrainer:
-    def __init__(self):
+    def __init__(self,model_save_path="model/",data_path="corpus/",batch_size=64,lr=1e-5,model_name="roberta",device='cpu'):
         # 加载数据
-        data_path = "./corpus/三元组抽取/train_data.json"
+        data_path = data_path+"train_data.json"
         self.vocab_path = "./state_dict/vocab.txt" # roberta模型字典的位置
         self.data = load_data(data_path)
-        self.model_name = "roberta" # 选择模型名字
+        self.model_name = model_name # 选择模型名字
         self.model_path = "./state_dict/pytorch_model.bin" # roberta模型位置
         self.recent_model_path = "" # 用于把已经训练好的模型继续训练
-        self.model_save_path = "./bert_model_relation_extrac.bin"
-        self.batch_size = 76
-        self.lr = 1e-5
+        self.model_save_path = model_save_path+"bert_model_relation_extrac.bin"
+        self.batch_size = batch_size
+        self.lr = lr
         # 加载字典
         self.word2idx = load_chinese_base_vocab(self.vocab_path)
         # 判断是否有可用GPU
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if device =='cpu':
+            self.device =device
+        else:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("device: " + str(self.device))
         # 定义模型
         self.bert_model = load_bert(self.vocab_path, model_name=self.model_name, model_class="relation_extrac", target_size=len(predicate2id))
@@ -223,9 +228,35 @@ class ExtractTrainer:
         self.save(self.model_save_path)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--epoches", type=int,default=5,required=False,help="epoch number")
+    parser.add_argument("--batch_size", type=int,default=64,required=False,help="batch size")
+    parser.add_argument("--model_save_path", type=str,default="model/",required=False,help="模型保存路径")
+    parser.add_argument("--lr", type=float,default=1e-8,required=False,help="学习率")
+    parser.add_argument("--data_path", type=str,default="corpus/",required=False,help="数据集目录")
+    parser.add_argument("--device", type=str,default="cpu",required=False,help="选择使用的硬件")
+    parser.add_argument("--model_name", type=str,default="roberta",required=False,help="选择模型名称")
 
-    trainer = ExtractTrainer()
-    train_epoches = 10
+    args = parser.parse_args()
+
+
+    predicate2id, id2predicate = {}, {}
+    with open(args.data_path+'all_50_schemas') as f:
+        for l in f:
+            l = json.loads(l)
+            if l['predicate'] not in predicate2id:
+                id2predicate[len(predicate2id)] = l['predicate']
+                predicate2id[l['predicate']] = len(predicate2id)
+
+
+
+
+
+
+
+    trainer = ExtractTrainer(model_save_path=args.model_save_path,batch_size=args.batch_size,lr=args.lr,data_path=args.data_path,model_name=args.model_name,device=args.device)
+    train_epoches = args.epoches
+
     for epoch in range(train_epoches):
         # 训练一个epoch
         trainer.train(epoch)
